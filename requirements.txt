@@ -1,0 +1,5 @@
+duckdb==1.0.0
+numpy==2.1.0
+pandas==2.2.2
+streamlit==1.37.1
+streamlit_extras==0.4.7
