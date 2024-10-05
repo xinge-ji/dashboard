@@ -1,14 +1,16 @@
 import random
+from datetime import datetime, timedelta
+
 import duckdb
 import numpy as np
-import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
+import streamlit as st
 from streamlit_extras.metric_cards import style_metric_cards
 
 ###############################################################################
 # 生成数据
 ###############################################################################
+
 
 # 定义随机日期生成函数
 def random_date(start, end):
@@ -19,17 +21,21 @@ def random_date(start, end):
 def get_data(sql_query):
     # 设置随机种子
     np.random.seed(42)
-    
+
     # 设置数据量
     n = 1000000
 
     # 商品包装
-    packaging_options = ['小包装', '中包装', '大包装']
+    packaging_options = ["小包装", "中包装", "大包装"]
 
     # 保管分区
     storage_areas = [
-        "常温散件分区", "常温整件分区", "冷藏药品散件分区",
-        "冷藏药品整件分区", "冷藏器械散件分区", "冷藏器械整件分区"
+        "常温散件分区",
+        "常温整件分区",
+        "冷藏药品散件分区",
+        "冷藏药品整件分区",
+        "冷藏器械散件分区",
+        "冷藏器械整件分区",
     ]
 
     # 随机生成日期
@@ -38,19 +44,22 @@ def get_data(sql_query):
     last_inbound_date = [random_date(start_date, end_date) for _ in range(n)]
 
     # 创建DataFrame
-    df = pd.DataFrame({
-        '商品id': np.arange(1, n+1),
-        '商品包装': np.random.choice(packaging_options, n),
-        '保管分区': np.random.choice(storage_areas, n),
-        '上次入库时间': last_inbound_date,
-        '当前仓库存在': np.random.choice([True, False], n),
-        '长宽高缺失': np.random.choice([True, False], n),
-        '长宽高存在0': np.random.choice([True, False], n),
-        '长宽高相等': np.random.choice([True, False], n)
-    })
-    
+    df = pd.DataFrame(
+        {
+            "商品id": np.arange(1, n + 1),
+            "商品包装": np.random.choice(packaging_options, n),
+            "保管分区": np.random.choice(storage_areas, n),
+            "上次入库时间": last_inbound_date,
+            "当前仓库存在": np.random.choice([True, False], n),
+            "长宽高缺失": np.random.choice([True, False], n),
+            "长宽高存在0": np.random.choice([True, False], n),
+            "长宽高相等": np.random.choice([True, False], n),
+        }
+    )
+
     return duckdb.query(sql_query).df()
-    
+
+
 ###############################################################################
 # 看板设计
 ###############################################################################
@@ -72,14 +81,25 @@ with col1:
     with st.container(border=True):
         storage_zone = st.multiselect(
             "保管分区",
-            ["常温散件分区", "常温整件分区", "冷藏药品散件分区", "冷藏药品整件分区", "冷藏器械散件分区", "冷藏器械整件分区"],
-            ["常温散件分区", "常温整件分区", "冷藏药品散件分区", "冷藏药品整件分区", "冷藏器械散件分区", "冷藏器械整件分区"]
+            [
+                "常温散件分区",
+                "常温整件分区",
+                "冷藏药品散件分区",
+                "冷藏药品整件分区",
+                "冷藏器械散件分区",
+                "冷藏器械整件分区",
+            ],
+            [
+                "常温散件分区",
+                "常温整件分区",
+                "冷藏药品散件分区",
+                "冷藏药品整件分区",
+                "冷藏器械散件分区",
+                "冷藏器械整件分区",
+            ],
         )
         day_since_last_inbound = st.number_input("距离上次入库的时间不超过（天）", min_value=1, value=30, step=1)
-        stock_availability = st.selectbox(
-            "当前仓库商品或所有商品",
-            ("当前仓库商品", "所有商品")
-        )
+        stock_availability = st.selectbox("当前仓库商品或所有商品", ("当前仓库商品", "所有商品"))
 
 sql_statistics = f"""
 WITH FilteredData AS (
@@ -149,23 +169,30 @@ df_equal_dimensions = get_data(sql_equal_dimensions)
 with col2:
     sub_col1, sub_col2, sub_col3, sub_col4 = st.columns(4)
     sub_col1.metric(label="所有商品数量", value=f"{int(df_statistics['total_rows']):,}")
-    sub_col2.metric(label="长宽高缺失商品数量", value=f"{
-                    int(df_statistics['missing_dimensions_count']):,}")
-    sub_col3.metric(label="长宽高存在0值数量", value=f"{
-                    int(df_statistics['zero_dimensions_count']):,}")
-    sub_col4.metric(label="长宽高相等商品数量", value=f"{
-                    int(df_statistics['equal_dimensions_count']):,}")
+    sub_col2.metric(
+        label="长宽高缺失商品数量",
+        value=f"{
+                    int(df_statistics['missing_dimensions_count']):,}",
+    )
+    sub_col3.metric(
+        label="长宽高存在0值数量",
+        value=f"{
+                    int(df_statistics['zero_dimensions_count']):,}",
+    )
+    sub_col4.metric(
+        label="长宽高相等商品数量",
+        value=f"{
+                    int(df_statistics['equal_dimensions_count']):,}",
+    )
     style_metric_cards()
 
     tab1, tab2, tab3 = st.tabs(["📙 长宽高缺失 ", "📘 长宽高存在0值 ", "📗 长宽高相等 "])
-    
+
     with tab1:
         st.dataframe(df_missing_dimensions)
-    
+
     with tab2:
         st.dataframe(df_zero_dimensions)
-    
+
     with tab3:
         st.dataframe(df_equal_dimensions)
-
-

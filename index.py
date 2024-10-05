@@ -1,5 +1,14 @@
 import streamlit as st
 
+
+# page = st_navbar(["首页", "入库实时看板", "入库历史看板"])
+
+# if page == "入库实时看板":
+#     st.switch_page("inbound_process/realtime.py")
+# if page == "入库历史看板":
+#     st.switch_page("inbound_process/history.py")
+
+
 st.markdown("""
             # 物流数据看板
             
